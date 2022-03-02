@@ -231,8 +231,10 @@ def Greedy_Decode_Eval(Net, datasets, args):
     print("[Info] Test Accuracy: {} [{}:{}:{}:{}]".format(Acc, Tp, Tn_1, Tn_2, (Tp+Tn_1+Tn_2)))
     print(f"[Info] 75%+ Accuracy: {T_f/(Tp+Tn_1+Tn_2)} [{T_f}/{(Tp+Tn_1+Tn_2)}]")
     t2 = time.time()
-    print(f'[Info] Global Char Accuracy:{T_c/t_chars} [{T_c}/{t_chars}] ')
-    print(f'[Info] Char Accuracy on full length match:{T_fc/t_fchars} [{T_fc}/{t_fchars}] ')
+    if t_chars > 0:
+        print(f'[Info] Global Char Accuracy:{T_c/t_chars} [{T_c}/{t_chars}] ')
+    if t_fchars > 0:
+        print(f'[Info] Char Accuracy on full length match:{T_fc/t_fchars} [{T_fc}/{t_fchars}] ')
     print(f"[Info] Length accuracy: {(Tp+Tn_2)/(Tp+Tn_1+Tn_2)}")
     print(f"[Info] Norm_ed: {norm_ed/(Tp+Tn_1+Tn_2)}")
     # print('Per char: ')
@@ -264,7 +266,8 @@ def evaluate_and_save(matrix):
             for _ in range(int(matrix[i][j])):
                 y_true.append(j)
                 y_pred.append(i)
-    report = classification_report(y_true, y_pred, target_names=CHARS[:-1], output_dict=True)
+
+    report = classification_report(y_true, y_pred, target_names=CHARS[:-1], output_dict=True, labels=list(range(36)))
     pd.DataFrame(report).transpose().to_csv('./testpreds/Cls_reports.csv')
 
 def postprocess(label):
