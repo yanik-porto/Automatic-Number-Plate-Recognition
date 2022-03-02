@@ -38,7 +38,7 @@ def get_parser():
     parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--cuda', default=True, type=bool, help='Use cuda to train model')
     parser.add_argument('--show', default=False, type=bool, help='show test image and its predict result or not.')
-    parser.add_argument('--save_pred_images', default=True, type=bool, help='save testpreds with original label to ./testpreds')
+    parser.add_argument('--save_pred_images', default=False, type=bool, help='save testpreds with original label to ./testpreds')
     parser.add_argument('--save_pred_results', default=False, type=bool, help='save preds to preds.csv')
     parser.add_argument('--evaluate', default=False, type=bool, help='Find confusion matrix and classification report and save results')
     parser.add_argument('--pretrained_model', default='./weights/iter2.pth', help='pretrained base model')
