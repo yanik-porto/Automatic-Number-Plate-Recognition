@@ -6,6 +6,8 @@ import numpy as np
 import random
 import cv2
 import os
+import sys
+sys.path.append("Automatic_Number_Plate_Recognition")
 from misc.separator import *
 
 
