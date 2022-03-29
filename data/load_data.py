@@ -79,10 +79,7 @@ class LPRDataLoader(Dataset):
 
     def augment_image(self, image):
         transform = A.Compose([
-        A.OneOf([
-            A.IAAAdditiveGaussianNoise(),
-            A.GaussNoise(),
-        ], p=0.3),
+        A.GaussNoise(),
         A.OneOf([
             A.MotionBlur(p=.4),
             A.MedianBlur(blur_limit=3, p=0.3),
@@ -90,9 +87,9 @@ class LPRDataLoader(Dataset):
         ], p=0.4),
         A.OneOf([
             A.CLAHE(clip_limit=2),
-            A.IAASharpen(),
-            A.IAAEmboss(),
-            A.RandomBrightnessContrast(),            
+            A.Sharpen(),
+            A.Emboss(),
+            A.RandomBrightnessContrast(),
         ], p=0.3),
         A.HueSaturationValue(p=0.3),
         ])

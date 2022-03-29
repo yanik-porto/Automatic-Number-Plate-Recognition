@@ -83,7 +83,7 @@ def collate_fn(batch):
         labels.extend(label)
         lengths.append(length)
         filenames.append(filename)
-    labels = np.asarray(labels).flatten().astype(np.int)
+    labels = np.asarray(labels).flatten().astype(int)
 
     return (torch.stack(imgs, 0), torch.from_numpy(labels), lengths, filenames)
 
@@ -153,7 +153,7 @@ def train():
     test_img_dirs = os.path.expanduser(args.test_img_dirs)
     #train_imgsize = get_size(train_img_dirs)
     #test_imgsize = get_size(test_img_dirs)
-    train_dataset = LPRDataLoader(train_img_dirs.split(','), args.img_size, args.lpr_max_len)
+    train_dataset = LPRDataLoader(train_img_dirs.split(','), args.img_size, args.lpr_max_len, True)
     test_dataset = LPRDataLoader(test_img_dirs.split(','), args.img_size, args.lpr_max_len)
 
     epoch_size = len(train_dataset) // args.train_batch_size
