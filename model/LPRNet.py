@@ -11,7 +11,7 @@ class MaxPool2dStep(nn.Module):
             nn.MaxPool2d(kernel_size, stride=stride)
         )
     def forward(self, x):
-        return self.block(x.index_select(1, torch.tensor(range(0, self.stop, self.step), dtype=torch.int64, device=x.device)))
+        return self.block(x[:, 0:self.stop:self.step, :, :])
 class small_basic_block(nn.Module):
     def __init__(self, ch_in, ch_out):
         super(small_basic_block, self).__init__()
