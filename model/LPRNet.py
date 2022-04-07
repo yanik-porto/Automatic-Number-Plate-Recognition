@@ -1,6 +1,17 @@
 import torch.nn as nn
 import torch
 
+class MaxPool2dStep(nn.Module):
+
+    def __init__(self, kernel_size, stride, step, stop):
+        super(MaxPool2dStep, self).__init__()
+        self.step = step
+        self.stop = stop
+        self.block = nn.Sequential(
+            nn.MaxPool2d(kernel_size, stride=stride)
+        )
+    def forward(self, x):
+        return self.block(x.index_select(1, torch.tensor(range(0, self.stop, self.step), dtype=torch.int64, device=x.device)))
 class small_basic_block(nn.Module):
     def __init__(self, ch_in, ch_out):
         super(small_basic_block, self).__init__()
@@ -27,18 +38,21 @@ class LPRNet(nn.Module):
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1), # 0
             nn.BatchNorm2d(num_features=64),
             nn.ReLU(),  # 2
-            nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 1, 1)),
+            # nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 1, 1)),
+            nn.MaxPool2d(kernel_size=(3, 3), stride=(1, 1)),
             small_basic_block(ch_in=64, ch_out=128),    # *** 4 ***
             nn.BatchNorm2d(num_features=128),
             nn.ReLU(),  # 6
-            nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(2, 1, 2)),
+            # nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(2, 1, 2)),
+            MaxPool2dStep(kernel_size=(3, 3), stride=(1, 2), step=2, stop=128),
             small_basic_block(ch_in=64, ch_out=256),   # 8
             nn.BatchNorm2d(num_features=256),
             nn.ReLU(),  # 10
             small_basic_block(ch_in=256, ch_out=256),   # *** 11 ***
             nn.BatchNorm2d(num_features=256),   # 12
             nn.ReLU(),
-            nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(4, 1, 2)),  # 14
+            # nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(4, 1, 2)),  # 14
+            MaxPool2dStep(kernel_size=(3, 3), stride=(1, 2), step=4, stop=256),
             nn.Dropout(dropout_rate),
             nn.Conv2d(in_channels=64, out_channels=256, kernel_size=(1, 4), stride=1),  # 16
             nn.BatchNorm2d(num_features=256),
