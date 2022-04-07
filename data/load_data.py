@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset,DataLoader
 from imutils import paths
 import albumentations as A
-import pandas as pd
+# import pandas as pd
 import numpy as np
 import random
 import cv2
