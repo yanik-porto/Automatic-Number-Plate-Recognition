@@ -12,6 +12,8 @@ class MaxPool2dStep(nn.Module):
         )
     def forward(self, x):
         return self.block(x[:, 0:self.stop:self.step, :, :])
+
+
 class small_basic_block(nn.Module):
     def __init__(self, ch_in, ch_out):
         super(small_basic_block, self).__init__()
