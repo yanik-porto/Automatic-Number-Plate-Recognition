@@ -27,7 +27,11 @@ class LPRDataLoader(Dataset):
         self.img_paths = []
         self.augment = augment
         for i in range(len(img_dir)):
-            self.img_paths += [el for el in paths.list_images(img_dir[i])]
+            for el in paths.list_images(img_dir[i]):
+                if el.endswith('__plaque.jpg'):
+                    self.img_paths.append(el)
+            # self.img_paths += [el for el in paths.list_images(img_dir[i])]
+
         print("1dir found, size: ",len(self.img_paths))
         random.shuffle(self.img_paths)
         self.img_size = imgSize
@@ -52,19 +56,32 @@ class LPRDataLoader(Dataset):
 
         basename = os.path.basename(filename)
         imgname, _ = os.path.splitext(basename)
-        imgname = imgname.split("-")[0].split("_")[0]
-        label = list()
-        for c in imgname:
-            c = c.upper()
-            # one_hot_base = np.zeros(len(CHARS))
-            # one_hot_base[CHARS_DICT[c]] = 1
-            label.append(CHARS_DICT[c])
-        #label = label[:10]
+        label = self.labelFromImgname(imgname)
         label_length = len(label)
+
         # if label_length<8 and index!=len(self.img_paths)-1:
         #     Image, label, label_length, filename = self.__getitem__(index+1)
         return Image, label, label_length, filename
-            
+
+    def labelFromImgname(self, imgname):
+        """
+        Return the label of a given image name (by convention : UID__LPID__IMGTYPE)
+        if image name not in 3 parts, then return empty list
+        """
+        label = list()
+
+        parts = imgname.split("__")
+        if len(parts) < 3:
+            print("wrong img name")
+            return label
+
+        lpid = parts[1]
+        for c in lpid:
+            c = c.upper()
+            label.append(CHARS_DICT[c])
+
+        return label
+
     def transform(self, img):
         if self.augment:
             img = self.augment_image(img)
