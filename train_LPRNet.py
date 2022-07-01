@@ -15,6 +15,7 @@ import argparse
 import torch
 import time
 import os
+from torch.utils.tensorboard import SummaryWriter
 
 def sparse_tuple_for_ctc(T_length, lengths):
     input_lengths = []
@@ -112,6 +113,8 @@ def train():
     epoch = 0 + args.resume_epoch
     loss_val = 0
 
+    writer = SummaryWriter()
+
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)
 
@@ -178,7 +181,9 @@ def train():
 
         if (iteration + 1) % args.test_interval == 0:
             testnet = lprnet.eval()
-            Greedy_Decode_Eval(testnet, test_dataset, args)
+            Acc = Greedy_Decode_Eval(testnet, test_dataset, args)
+            writer.add_scalar("Accuracy/eval", Acc, epoch)
+
             # lprnet.train() # should be switch to train mode
 
         start_time = time.time()
@@ -217,7 +222,10 @@ def train():
             print('Epoch:' + repr(epoch) + ' || epochiter: ' + repr(iteration % epoch_size) + '/' + repr(epoch_size)
                   + '|| Totel iter ' + repr(iteration) + ' || Loss: %.4f||' % (loss.item()) +
                   'Batch time: %.4f sec. ||' % (end_time - start_time) + 'LR: %.8f' % (lr))
-            
+
+            writer.add_scalar("Loss/train", loss_val, epoch)
+
+
         if loss.item() < GLOBAL_LOSS:
             GLOBAL_LOSS = loss.item()
             #torch.save(lprnet.state_dict(), args.save_folder+f"Min_loss({round(loss.item(),4)})_(epoch{repr(epoch)})_model.pth")
@@ -319,6 +327,7 @@ def Greedy_Decode_Eval(Net, datasets, args):
     #     print(chr(55+i),': ',res_chars[i]/T_c)
     print("[Info] Test Speed: {}s 1/{}]".format((t2 - t1) / len(datasets), len(datasets)))
 
+    return Acc
 
 if __name__ == "__main__":
     train()
