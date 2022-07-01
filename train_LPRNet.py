@@ -3,6 +3,7 @@
 
 from data.load_data import CHARS, CHARS_DICT, LPRDataLoader
 from model.LPRNet import build_lprnet
+from model.STNet import STNet
 from PIL import Image
 # import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
@@ -68,6 +69,7 @@ def get_parser():
     parser.add_argument('--save_folder', default='./weights/', help='Location to save checkpoint models')
     # parser.add_argument('--pretrained_model', default='./weights/Final_LPRNet_model.pth', help='pretrained base model')
     parser.add_argument('--pretrained_model', default='', help='pretrained base model')
+    parser.add_argument('--pretrained_model_stnet', default='', help='pretrained stnet base model')
 
     args = parser.parse_args()
 
@@ -118,9 +120,15 @@ def train():
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)
 
-    lprnet = build_lprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate)
+    # build networks
     device = torch.device("cuda:0" if args.cuda else "cpu")
+
+    stnet = STNet()
+    stnet.to(device)
+
+    lprnet = build_lprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate)
     lprnet.to(device)
+
     print("Successful to build network!")
 
     # load pretrained model
@@ -145,13 +153,23 @@ def train():
         lprnet.container.apply(weights_init)
         print("initial net weights successful!")
 
+    if args.pretrained_model_stnet:
+        stnet.load_state_dict(torch.load(args.pretrained_model_stnet))
+        print("load pretrained stnet model successful!")
+
     # define optimizer
+    optimizer_params = [
+        {'params': stnet.parameters(), 'weight_decay': args.weight_decay},
+        {'params': lprnet.parameters(), 'weight_decay': args.weight_decay}
+    ]
     # optimizer = optim.SGD(lprnet.parameters(), lr=args.learning_rate,
     #                       momentum=args.momentum, weight_decay=args.weight_decay)
     # optimizer = optim.RMSprop(lprnet.parameters(), lr=args.learning_rate, alpha = 0.9, eps=1e-08,
     #                      momentum=args.momentum, weight_decay=args.weight_decay)
-    optimizer = optim.Adam(lprnet.parameters(), lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08,
-                         weight_decay=args.weight_decay)
+    # optimizer = optim.Adam(lprnet.parameters(), lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08,
+    #                      weight_decay=args.weight_decay)
+    optimizer = optim.Adam(optimizer_params, lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08)
+
     train_img_dirs = os.path.expanduser(args.train_img_dirs)
     test_img_dirs = os.path.expanduser(args.test_img_dirs)
     #train_imgsize = get_size(train_img_dirs)
@@ -178,10 +196,12 @@ def train():
 
         if iteration !=0 and iteration % args.save_interval == 0:
             torch.save(lprnet.state_dict(), args.save_folder + 'LPRNet_' + '_epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
+            torch.save(stnet.state_dict(), args.save_folder + 'Net_' + '_epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
 
         if (iteration + 1) % args.test_interval == 0:
             testnet = lprnet.eval()
-            Acc = Greedy_Decode_Eval(testnet, test_dataset, args)
+            teststnet = stnet.eval()
+            Acc = Greedy_Decode_Eval(testnet, teststnet, test_dataset, args)
             writer.add_scalar("Accuracy/eval", Acc, epoch)
 
             # lprnet.train() # should be switch to train mode
@@ -205,6 +225,7 @@ def train():
             labels = Variable(labels, requires_grad=False)
 
         # forward
+        images = stnet(images)
         logits = lprnet(images)
         log_probs = logits.permute(2, 0, 1) # for ctc loss: T x N x C
         log_probs = log_probs.log_softmax(2).requires_grad_()
@@ -231,6 +252,13 @@ def train():
             #torch.save(lprnet.state_dict(), args.save_folder+f"Min_loss({round(loss.item(),4)})_(epoch{repr(epoch)})_model.pth")
     
     # save final parameters
+
+    save_path_stnet = args.save_folder + 'Final_STNet_model.pth'
+    torch.save(stnet.state_dict(), save_path_stnet)
+    stnet_eval = STNet()
+    stnet_eval.to(device)
+    stnet_eval.load_state_dict(torch.load(save_path_stnet))
+
     save_path = args.save_folder + 'Final_LPRNet_model.pth'
     torch.save(lprnet.state_dict(), save_path)
     lprnet_eval = build_lprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate)
@@ -239,9 +267,9 @@ def train():
 
     # final test
     print("Final test Accuracy:")
-    Greedy_Decode_Eval(lprnet_eval, test_dataset, args)
+    Greedy_Decode_Eval(lprnet_eval, stnet_eval, test_dataset, args)
 
-def Greedy_Decode_Eval(Net, datasets, args):
+def Greedy_Decode_Eval(Net, STNet, datasets, args):
     # TestNet = Net.eval()
     epoch_size = len(datasets) // args.test_batch_size
     batch_iterator = iter(DataLoader(datasets, args.test_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=collate_fn))
@@ -271,6 +299,7 @@ def Greedy_Decode_Eval(Net, datasets, args):
             images = Variable(images)
 
         # forward
+        images = STNet(images)
         prebs = Net(images)
         # greedy decode
         prebs = prebs.cpu().detach().numpy()
