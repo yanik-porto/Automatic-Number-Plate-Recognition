@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import DataLoader
 # import torch.backends.cudnn as cudnn
 from model.LPRNet import build_lprnet
+from model.STNet import STNet
 from torch.autograd import Variable
 import torch.nn.functional as F
 from torch import optim
@@ -42,6 +43,7 @@ def get_parser():
     parser.add_argument('--save_pred_results', default=False, type=bool, help='save preds to preds.csv')
     parser.add_argument('--evaluate', default=False, type=bool, help='Find confusion matrix and classification report and save results')
     parser.add_argument('--pretrained_model', default='./weights/iter2.pth', help='pretrained base model')
+    parser.add_argument('--pretrained_model_stnet', help='pretrained stnet base model')
     parser.add_argument('--postprocess', default=False, type=bool, help='Apply postprocessing steps')
 
     args = parser.parse_args()
@@ -71,6 +73,11 @@ def test():
     lprnet.to(device)
     print("Successful to build network!")
 
+    stnet = STNet()
+    if args.pretrained_model_stnet:
+        stnet.load_state_dict(torch.load(args.pretrained_model_stnet))
+        print("load pretrained stnet model successful!")
+
     # load pretrained model
     if args.pretrained_model:
         lprnet.load_state_dict(torch.load(args.pretrained_model))
@@ -82,11 +89,11 @@ def test():
     test_img_dirs = os.path.expanduser(args.test_img_dirs)
     test_dataset = LPRDataLoader(test_img_dirs.split(','), args.img_size, args.lpr_max_len, augment=False)
     
-    Greedy_Decode_Eval(lprnet, test_dataset, args)
+    Greedy_Decode_Eval(lprnet, stnet, test_dataset, args)
     # finally:
     #     cv2.destroyAllWindows()
 
-def Greedy_Decode_Eval(Net, datasets, args):
+def Greedy_Decode_Eval(Net, stnet, datasets, args):
     # TestNet = Net.eval()
     epoch_size = len(datasets) // args.test_batch_size
     batch_iterator = iter(DataLoader(datasets, args.test_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=collate_fn))
@@ -122,7 +129,9 @@ def Greedy_Decode_Eval(Net, datasets, args):
             images = Variable(images)
 
         # forward
-        prebs = Net(images)
+        x = stnet(images)
+        prebs = Net(x)
+
         # greedy decode
         prebs = prebs.cpu().detach().numpy()
         preb_labels = list()
