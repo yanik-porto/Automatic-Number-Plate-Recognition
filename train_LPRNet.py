@@ -196,7 +196,7 @@ def train():
 
         if iteration !=0 and iteration % args.save_interval == 0:
             torch.save(lprnet.state_dict(), args.save_folder + 'LPRNet_' + '_epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
-            torch.save(stnet.state_dict(), args.save_folder + 'Net_' + '_epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
+            torch.save(stnet.state_dict(), args.save_folder + 'STNet_' + '_epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
 
         if (iteration + 1) % args.test_interval == 0:
             testnet = lprnet.eval()
