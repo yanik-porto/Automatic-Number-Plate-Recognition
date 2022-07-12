@@ -1,10 +1,9 @@
 from torch.utils.data import Dataset,DataLoader
-from imutils import paths
+import cv2
 import albumentations as A
 # import pandas as pd
 import numpy as np
 import random
-import cv2
 import os
 import sys
 sys.path.append("Automatic_Number_Plate_Recognition")
@@ -27,9 +26,10 @@ class LPRDataLoader(Dataset):
         self.img_paths = []
         self.augment = augment
         for i in range(len(img_dir)):
-            for el in paths.list_images(img_dir[i]):
-                if el.endswith('__plaque.jpg'):
-                    self.img_paths.append(el)
+            for root, dirs, files in os.walk(img_dir[i]):
+                for f in files:
+                    if f.endswith('__plaque.jpg'):
+                        self.img_paths.append(os.path.join(root, f))
             # self.img_paths += [el for el in paths.list_images(img_dir[i])]
 
         print("1dir found, size: ",len(self.img_paths))
@@ -115,65 +115,3 @@ class LPRDataLoader(Dataset):
         augmented_image = transform(image=image)['image']
         augmented_image = cv2.cvtColor(augmented_image, cv2.COLOR_RGB2BGR)
         return augmented_image
-            
-
-
-
-# class LPRDataLoader(Dataset):                                                         # runs for imagefolder without preprocessing use for testing if no labels (or make preds)
-#     def __init__(self, img_dir, imgSize, lpr_max_len, augment=False):
-#         self.df = pd.read_csv("ENTIRE_DATASET/labels.csv",encoding= 'unicode_escape')
-#         self.img_dir = img_dir
-#         self.img_paths = []
-#         self.augment = augment
-#         for i in range(len(img_dir)):
-#             self.img_paths += [el for el in paths.list_images(img_dir[i])]
-#         print("1dir found, size: ",len(self.img_paths))
-#         random.shuffle(self.img_paths)
-#         self.img_size = imgSize
-#         self.lpr_max_len = lpr_max_len
-#         self.PreprocFun = self.transform
-
-#     def __len__(self):
-#         return len(self.img_paths)
-
-#     def __getitem__(self, index):
-#         filename = self.img_paths[index]
-#         Image = cv2.imread(filename)
-#         if Image is None:
-#             print(filename)
-#         height, width, _ = Image.shape
-#         if height != self.img_size[1] or width != self.img_size[0]:
-#             Image = cv2.resize(Image, self.img_size)
-#         Image = self.transform(Image)
-
-#         basename = os.path.basename(filename)
-#         #imgname, _ = os.path.splitext(basename)
-#         #imgname = imgname.split("-")[0].split("_")[0]
-#         try:
-#             target = self.df[self.df.iloc[:,0]==basename].iloc[0,1]
-#         except:
-#             Image, label, label_length, filename = self.__getitem__(index+1)
-#             return Image, label, label_length, filename
-#         target = str(target)
-#         target = ''.join(e for e in target if e.isalnum())
-#         label = list()
-#         for c in target:
-#             c = c.upper()
-#             # one_hot_base = np.zeros(len(CHARS))
-#             # one_hot_base[CHARS_DICT[c]] = 1
-#             label.append(CHARS_DICT[c])
-#         #label = label[:10]
-#         label_length = len(label)
-#         # if label_length<8 and index!=len(self.img_paths)-1:
-#         #     Image, label, label_length, filename = self.__getitem__(index+1)
-#         return Image, label, label_length, filename
-
-#     def transform(self, img):
-#         img = img.astype('float32')
-#         #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#         img -= 127.5
-#         img *= 0.0078125
-#         #thresh, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
-#         #img = np.reshape(img, img.shape + (1,))
-#         img = np.transpose(img, (2, 0, 1))
-#         return img
