@@ -66,7 +66,6 @@ def get_parser():
     parser.add_argument('--lr_schedule', default=[70,110,125,135,151], help='schedule for learning rate.')
     parser.add_argument('--save_folder', default='./weights/', help='Location to save checkpoint models')
     parser.add_argument('--pretrained_model', default='', help='pretrained base model')
-    parser.add_argument('--pretrained_model_stnet', default='', help='pretrained stnet base model')
 
     args = parser.parse_args()
 
