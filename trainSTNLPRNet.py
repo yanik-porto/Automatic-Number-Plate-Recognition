@@ -1,8 +1,10 @@
 import sys
 sys.path.append("Automatic_Number_Plate_Recognition")
 
-from data.load_data import CHARS, CHARS_DICT, LPRDataLoader
 from model.StnLprNet import build_stnlprnet
+from decoderGreedy import Greedy_Decode_Eval, collate_fn
+from trainModel import trainModel
+from data.load_data import CHARS
 from torch.autograd import Variable
 import torch.nn.functional as F
 from torch.utils.data import *
@@ -13,63 +15,25 @@ import torch
 import time
 import os
 from torch.utils.tensorboard import SummaryWriter
-from decoderGreedy import Greedy_Decode_Eval, collate_fn
 
-class trainSTNLPRNet:
+class trainSTNLPRNet(trainModel):
     def __init__(self, args):
-        self.args = args
-
-        if not os.path.exists(args.save_folder):
-            os.mkdir(args.save_folder)
-
-        # build networks
-        device = torch.device("cuda:0" if args.cuda else "cpu")
+        super(trainSTNLPRNet, self).__init__()
 
         self.stnlprnet = build_stnlprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate, batch_size=args.train_batch_size)
-        self.stnlprnet.to(device)
-
-        print("Successful to build network!")
+        self.stnlprnet.to(self.device)
 
         # load pretrained model
         if args.pretrained_model:
             self.stnlprnet.load_state_dict(torch.load(args.pretrained_model))
             print("load pretrained model successful!")
         else:
-            def xavier(param):
-                nn.init.xavier_uniform(param) 
-
-            def weights_init(m):
-                for key in m.state_dict():
-                    if key.split('.')[-1] == 'weight':
-                        if 'conv' in key:
-                            nn.init.kaiming_normal_(m.state_dict()[key], mode='fan_out')
-                        if 'bn' in key:
-                            m.state_dict()[key][...] = xavier(1)
-                    elif key.split('.')[-1] == 'bias':
-                        m.state_dict()[key][...] = 0.01
-
-            self.stnlprnet.backbone.apply(weights_init)
-            self.stnlprnet.container.apply(weights_init)
+            self.defaultLprInit(self.stnlprnet)
             print("initial net weights successful!")
 
         # define optimizer
         self.optimizer = optim.Adam(self.stnlprnet.parameters(), lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08,
                             weight_decay=args.weight_decay)
-
-        train_img_dirs = os.path.expanduser(args.train_img_dirs)
-        test_img_dirs = os.path.expanduser(args.test_img_dirs)
-        self.train_dataset = LPRDataLoader(train_img_dirs.split(','), args.img_size, args.lpr_max_len, True)
-        self.test_dataset = LPRDataLoader(test_img_dirs.split(','), args.img_size, args.lpr_max_len)
-
-        self.epoch_size = len(self.train_dataset) // args.train_batch_size
-        self.max_iter = args.max_epoch * self.epoch_size
-
-        self.ctc_loss = nn.CTCLoss(blank=len(CHARS)-1, reduction='mean')
-
-        if args.resume_epoch > 0:
-            self.start_iter = args.resume_epoch * self.epoch_size
-        else:
-            self.start_iter = 0
 
     def train(self):
         args = self.args
@@ -140,33 +104,6 @@ class trainSTNLPRNet:
                 #torch.save(lprnet.state_dict(), args.save_folder+f"Min_loss({round(loss.item(),4)})_(epoch{repr(epoch)})_model.pth")
         
         self.saveFinalParameter()
-    
-    def sparse_tuple_for_ctc(self, T_length, lengths):
-        input_lengths = []
-        target_lengths = []
-
-        for ch in lengths:
-            input_lengths.append(T_length)
-            target_lengths.append(ch)
-
-        return tuple(input_lengths), tuple(target_lengths)
-
-    def adjust_learning_rate(self, optimizer, cur_epoch, base_lr, lr_schedule):
-        """
-        Sets the learning rate
-        """
-        
-        lr = 0
-        for i, e in enumerate(lr_schedule):
-            if cur_epoch < e:
-                lr = base_lr * (0.1 ** i)
-                break
-        if lr == 0:
-            lr = base_lr
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-
-        return lr
 
     def saveFinalParameter(self):
         # save final parameters
