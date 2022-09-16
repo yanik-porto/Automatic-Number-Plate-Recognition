@@ -30,9 +30,9 @@ class small_basic_block(nn.Module):
     def forward(self, x):
         return self.block(x)
 
-class StnLprNet(nn.Module):
+class STNLPRNet(nn.Module):
     def __init__(self, lpr_max_len, phase, class_num, dropout_rate, batch_size=1):
-        super(StnLprNet, self).__init__()
+        super(STNLPRNet, self).__init__()
         torch.cuda.empty_cache()
 
         ######### STN #########
@@ -161,7 +161,7 @@ class StnLprNet(nn.Module):
 
 def build_stnlprnet(lpr_max_len=11, phase=False, class_num=36, dropout_rate=0.5, batch_size=1):
 
-    Net = StnLprNet(lpr_max_len, phase, class_num, dropout_rate, batch_size)
+    Net = STNLPRNet(lpr_max_len, phase, class_num, dropout_rate, batch_size)
 
     if phase == "train":
         return Net.train()

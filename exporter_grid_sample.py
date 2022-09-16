@@ -1,7 +1,7 @@
 import os
 import torch
 import sys
-from model.StnLprNet import build_stnlprnet
+from model.STNLPRNet import build_stnlprnet
 from data.load_data import CHARS
 import onnx
 import onnx_graphsurgeon as gs

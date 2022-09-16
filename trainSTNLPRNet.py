@@ -1,7 +1,7 @@
 import sys
 sys.path.append("Automatic_Number_Plate_Recognition")
 
-from model.StnLprNet import build_stnlprnet
+from model.STNLPRNet import build_stnlprnet
 from decoderGreedy import Greedy_Decode_Eval, collate_fn
 from trainModel import trainModel
 from data.load_data import CHARS

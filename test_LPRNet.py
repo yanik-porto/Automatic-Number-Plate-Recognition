@@ -11,7 +11,7 @@ from nltk.metrics.distance import edit_distance
 from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import DataLoader
 # import torch.backends.cudnn as cudnn
-from model.StnLprNet import build_stnlprnet
+from model.STNLPRNet import build_stnlprnet
 from torch.autograd import Variable
 import torch.nn.functional as F
 from torch import optim
