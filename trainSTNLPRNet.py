@@ -15,7 +15,7 @@ import os
 from torch.utils.tensorboard import SummaryWriter
 from decoderGreedy import Greedy_Decode_Eval, collate_fn
 
-class trainLPRNet:
+class trainSTNLPRNet:
     def __init__(self, args):
         self.args = args
 
