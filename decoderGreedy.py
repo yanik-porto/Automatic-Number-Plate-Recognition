@@ -20,7 +20,7 @@ def collate_fn(batch):
 
     return (torch.stack(imgs, 0), torch.from_numpy(labels), lengths, filenames)
     
-def Greedy_Decode_Eval(Net, datasets, args):
+def Greedy_Decode_Eval(Nets, datasets, args):
     # TestNet = Net.eval()
     epoch_size = len(datasets) // args.test_batch_size
     batch_iterator = iter(DataLoader(datasets, args.test_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=collate_fn)) # check if LPRDataLoader needed
@@ -50,7 +50,10 @@ def Greedy_Decode_Eval(Net, datasets, args):
             images = Variable(images)
 
         # forward
-        prebs = Net(images)
+        prebs = images
+        for Net in Nets:
+            prebs = Net(prebs)
+
         # greedy decode
         prebs = prebs.cpu().detach().numpy()
         preb_labels = list()

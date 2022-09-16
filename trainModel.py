@@ -1,8 +1,15 @@
+from decoderGreedy import Greedy_Decode_Eval, collate_fn
+from data.load_data import CHARS, LPRDataLoader
+import numpy as np
 import os
+import time
 import torch
-from data.load_data import CHARS, CHARS_DICT, LPRDataLoader
 import torch.nn as nn
 from abc import ABC, abstractmethod
+from data.load_data import CHARS
+from torch.autograd import Variable
+from torch.utils.data import *
+from torch.utils.tensorboard import SummaryWriter
 
 class trainModel(ABC):
     def __init__(self, args):
@@ -76,3 +83,81 @@ class trainModel(ABC):
             param_group['lr'] = lr
 
         return lr
+
+    def train(self):
+        args = self.args
+
+        T_length = 18 # args.lpr_max_len
+        epoch = 0 + args.resume_epoch
+        loss_val = 0
+        GLOBAL_LOSS = np.inf
+
+        writer = SummaryWriter()
+
+        for iteration in range(self.start_iter, self.max_iter):
+            if iteration % self.epoch_size == 0:
+                # create batch iterator
+                batch_iterator = iter(DataLoader(self.train_dataset, args.train_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=collate_fn))
+                loss_val = 0
+                epoch += 1
+
+            if iteration !=0 and iteration % args.save_interval == 0:
+                for model in self.models():
+                    torch.save(model.state_dict(), args.save_folder + model.__class__.__name__ + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
+
+            if (iteration + 1) % args.test_interval == 0:
+                for model in self.models():
+                    model.eval()
+                Acc = Greedy_Decode_Eval(self.models(), self.test_dataset, args)
+                writer.add_scalar("Accuracy/eval", Acc, epoch)
+
+            start_time = time.time()
+            # load train data
+            images, labels, lengths, _ = next(batch_iterator)
+
+            # get ctc parameters
+            input_lengths, target_lengths = self.sparse_tuple_for_ctc(T_length, lengths)
+
+            # update lr
+            lr = self.adjust_learning_rate(self.optimizer, epoch, args.learning_rate, args.lr_schedule)
+
+            if args.cuda:
+                images = Variable(images, requires_grad=False).cuda()
+                labels = Variable(labels, requires_grad=False).cuda()
+            else:
+                images = Variable(images, requires_grad=False)
+                labels = Variable(labels, requires_grad=False)
+
+            # forward
+            logits = images
+            for model in self.models():
+                logits = model(logits)
+            log_probs = logits.permute(2, 0, 1) # for ctc loss: T x N x C
+            log_probs = log_probs.log_softmax(2).requires_grad_()
+
+            # backprop
+            self.optimizer.zero_grad()
+            loss = self.ctc_loss(log_probs, labels, input_lengths=input_lengths, target_lengths=target_lengths)
+            if loss.item() == np.inf:
+                continue
+            loss.backward()
+            self.optimizer.step()
+            loss_val += loss.item()
+            end_time = time.time()
+            if iteration % 20 == 0:
+                print('Epoch:' + repr(epoch) + ' || epochiter: ' + repr(iteration % self.epoch_size) + '/' + repr(self.epoch_size)
+                    + '|| Total iter ' + repr(iteration) + ' || Loss: %.4f||' % (loss.item()) +
+                    'Batch time: %.4f sec. ||' % (end_time - start_time) + 'LR: %.8f' % (lr))
+
+                writer.add_scalar("Loss/train", loss_val, epoch)
+
+
+            if loss.item() < GLOBAL_LOSS:
+                GLOBAL_LOSS = loss.item()
+                #torch.save(lprnet.state_dict(), args.save_folder+f"Min_loss({round(loss.item(),4)})_(epoch{repr(epoch)})_model.pth")
+        
+        self.saveFinalParameter()
+
+    @abstractmethod
+    def saveFinalParameter(self):
+        pass
