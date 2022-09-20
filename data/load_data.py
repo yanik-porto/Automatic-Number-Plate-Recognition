@@ -47,8 +47,15 @@ def imagesToTensor(images, device, imgSize):
     tensors = tensors.to(device)
     return Variable(tensors)
 
+def transformSquared(img):
+    halfHeight = img.shape[0] // 2
+    img = cv2.hconcat([img[:halfHeight,:], img[halfHeight:halfHeight*2,:]]) # halfHeight * 2 instead of lastrow, because heights not equal for odd number of rows
+    # quartWidth = img.shape[1] // 4
+    # img = cv2.hconcat([img[:halfHeight,quartWidth:-quartWidth], img[halfHeight:halfHeight*2,:]])
+    return img
+
 class LPRDataset(Dataset):
-    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, areSquareImages=False):
+    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False):
         self.img_dir = img_dir
         self.img_paths = []
         self.augment = augment
@@ -63,6 +70,7 @@ class LPRDataset(Dataset):
         random.shuffle(self.img_paths)
         self.img_size = imgSize
         self.lpr_max_len = lpr_max_len
+        self.doTransformSquare = False
 
     def __len__(self):
         return len(self.img_paths)
@@ -74,6 +82,8 @@ class LPRDataset(Dataset):
             print(filename)
         height, width, _ = Image.shape
 
+        if self.doTransformSquare:
+            Image = transformSquared(Image)
         Image = cv2.resize(Image, self.img_size)
             
         # if width/height<2:
