@@ -2,7 +2,6 @@ import sys
 sys.path.append("Automatic_Number_Plate_Recognition")
 
 from model.STNLPRNet import build_stnlprnet
-from decoderGreedy import Greedy_Decode_Eval
 from trainModel import trainModel
 from data.load_data import CHARS
 from torch.utils.data import *
@@ -10,8 +9,8 @@ from torch import optim
 import torch
 
 class trainSTNLPRNet(trainModel):
-    def __init__(self, args):
-        super(trainSTNLPRNet, self).__init__(args)
+    def __init__(self, args, areSquareImages=False):
+        super(trainSTNLPRNet, self).__init__(args, areSquareImages)
 
         self.stnlprnet = build_stnlprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate, batch_size=args.train_batch_size)
         self.stnlprnet.to(self.device)
@@ -38,7 +37,7 @@ class trainSTNLPRNet(trainModel):
 
         # final test
         print("Final test Accuracy:")
-        Greedy_Decode_Eval([lprnet_eval], self.test_dataset, self.args)
+        self.Greedy_Decode_Eval([lprnet_eval], self.test_dataset)
 
     def models(self):
         return [self.stnlprnet]

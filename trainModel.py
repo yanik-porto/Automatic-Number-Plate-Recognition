@@ -1,19 +1,19 @@
-from decoderGreedy import Greedy_Decode_Eval, collate_fn
+from decoderGreedy import DecoderGreedy
 from data.load_data import CHARS, LPRDataLoader
 import numpy as np
 import os
 import time
 import torch
 import torch.nn as nn
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from data.load_data import CHARS
 from torch.autograd import Variable
 from torch.utils.data import *
 from torch.utils.tensorboard import SummaryWriter
 
-class trainModel(ABC):
-    def __init__(self, args):
-        self.args = args
+class trainModel(DecoderGreedy):
+    def __init__(self, args, areSquareImages=False):
+        super(trainModel, self).__init__(args)
 
         if not os.path.exists(args.save_folder):
             os.mkdir(args.save_folder)
@@ -21,12 +21,16 @@ class trainModel(ABC):
         # build networks
         self.device = torch.device("cuda:0" if args.cuda else "cpu")
 
+        self.areSquareImages = areSquareImages
+        self.args.img_size = (48, 48) if self.areSquareImages else self.args.img_size #Check if useful to provide img_size in args
+
         train_img_dirs = os.path.expanduser(args.train_img_dirs)
         test_img_dirs = os.path.expanduser(args.test_img_dirs)
         self.train_dataset = LPRDataLoader(train_img_dirs.split(','), args.img_size, args.lpr_max_len, True)
         self.test_dataset = LPRDataLoader(test_img_dirs.split(','), args.img_size, args.lpr_max_len)
 
         self.epoch_size = len(self.train_dataset) // args.train_batch_size
+        if self.epoch_size == 0 : self.epoch_size = 1
         self.max_iter = args.max_epoch * self.epoch_size
 
         self.ctc_loss = nn.CTCLoss(blank=len(CHARS)-1, reduction='mean')
@@ -97,7 +101,7 @@ class trainModel(ABC):
         for iteration in range(self.start_iter, self.max_iter):
             if iteration % self.epoch_size == 0:
                 # create batch iterator
-                batch_iterator = iter(DataLoader(self.train_dataset, args.train_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=collate_fn))
+                batch_iterator = iter(DataLoader(self.train_dataset, args.train_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=self.collate_fn))
                 loss_val = 0
                 epoch += 1
 
@@ -108,7 +112,7 @@ class trainModel(ABC):
             if (iteration + 1) % args.test_interval == 0:
                 for model in self.models():
                     model.eval()
-                Acc = Greedy_Decode_Eval(self.models(), self.test_dataset, args)
+                Acc = self.Greedy_Decode_Eval(self.models(), self.test_dataset)
                 writer.add_scalar("Accuracy/eval", Acc, epoch)
 
             start_time = time.time()
