@@ -27,6 +27,10 @@ class trainSTNLPRNet(trainModel):
         self.optimizer = optim.Adam(self.stnlprnet.parameters(), lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08,
                             weight_decay=args.weight_decay)
 
+        # give square image info to dataset only in this class, since "adaptiv" class handle square yet 
+        self.train_dataset.doTransformSquare = self.areSquareImages
+        self.test_dataset.doTransformSquare = self.areSquareImages
+
     def saveFinalParameter(self):
         # save final parameters
         save_path = self.args.save_folder + 'Final_STNLPRNet_model.pth'
