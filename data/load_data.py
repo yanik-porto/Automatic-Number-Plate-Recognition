@@ -47,8 +47,8 @@ def imagesToTensor(images, device, imgSize):
     tensors = tensors.to(device)
     return Variable(tensors)
 
-class LPRDataLoader(Dataset):
-    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False):
+class LPRDataset(Dataset):
+    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, areSquareImages=False):
         self.img_dir = img_dir
         self.img_paths = []
         self.augment = augment
@@ -74,9 +74,6 @@ class LPRDataLoader(Dataset):
             print(filename)
         height, width, _ = Image.shape
 
-        # if np.random.randint(10) == 2:
-        #     Image = cv2.resize(Image,(70,18))
-        #     Image = cv2.resize(Image,(94,24))
         Image = cv2.resize(Image, self.img_size)
             
         # if width/height<2:

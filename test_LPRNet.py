@@ -5,7 +5,7 @@
 test pretrained model.
 '''
 
-from data.load_data import CHARS, CHARS_DICT, LPRDataLoader
+from data.load_data import CHARS, CHARS_DICT, LPRDataset
 from sklearn.metrics import classification_report
 from nltk.metrics.distance import edit_distance
 from PIL import Image, ImageDraw, ImageFont
@@ -82,7 +82,7 @@ def test():
         return False
 
     test_img_dirs = os.path.expanduser(args.test_img_dirs)
-    test_dataset = LPRDataLoader(test_img_dirs.split(','), args.img_size, args.lpr_max_len, augment=False)
+    test_dataset = LPRDataset(test_img_dirs.split(','), args.img_size, args.lpr_max_len, augment=False)
     
     Greedy_Decode_Eval(stnlprnet, test_dataset, args)
     # finally:

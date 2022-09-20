@@ -30,7 +30,7 @@ class DecoderGreedy(ABC):
 
         # TestNet = Net.eval()
         epoch_size = len(datasets) // args.test_batch_size
-        batch_iterator = iter(DataLoader(datasets, args.test_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=self.collate_fn)) # check if LPRDataLoader needed
+        batch_iterator = iter(DataLoader(datasets, args.test_batch_size, shuffle=True, num_workers=args.num_workers, collate_fn=self.collate_fn))
 
         Tp = 0
         Tn_1 = 0

@@ -1,5 +1,5 @@
 from decoderGreedy import DecoderGreedy
-from data.load_data import CHARS, LPRDataLoader
+from data.load_data import CHARS, LPRDataset
 import numpy as np
 import os
 import time
@@ -26,8 +26,8 @@ class trainModel(DecoderGreedy):
 
         train_img_dirs = os.path.expanduser(args.train_img_dirs)
         test_img_dirs = os.path.expanduser(args.test_img_dirs)
-        self.train_dataset = LPRDataLoader(train_img_dirs.split(','), args.img_size, args.lpr_max_len, True)
-        self.test_dataset = LPRDataLoader(test_img_dirs.split(','), args.img_size, args.lpr_max_len)
+        self.train_dataset = LPRDataset(train_img_dirs.split(','), args.img_size, args.lpr_max_len, True, areSquareImages)
+        self.test_dataset = LPRDataset(test_img_dirs.split(','), args.img_size, args.lpr_max_len, False, areSquareImages)
 
         self.epoch_size = len(self.train_dataset) // args.train_batch_size
         if self.epoch_size == 0 : self.epoch_size = 1
