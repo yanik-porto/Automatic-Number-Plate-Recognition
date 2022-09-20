@@ -6,6 +6,8 @@ import numpy as np
 import random
 import os
 import sys
+import torch
+from torch.autograd import Variable
 sys.path.append("Automatic_Number_Plate_Recognition")
 from misc.separator import *
 
@@ -19,6 +21,31 @@ CHARS = [
          ]
 
 CHARS_DICT = {char:i for i, char in enumerate(CHARS)}
+
+def tensorToImages(tensor):
+    images = []
+    for entry in tensor:
+        image = entry.cpu().detach().numpy()
+        image /= .0078125
+        image += 127.5
+        image = np.transpose(image, (1, 2, 0))
+        images.append(image)
+    return images
+
+
+def imagesToTensor(images, device, imgSize):
+    tensors = []
+    for img in images:
+        if img.shape[0] != imgSize[1] or img.shape[1] != imgSize[0]:
+            img = cv2.resize(img, imgSize)
+        img = img.astype('float32')
+        img -= 127.5
+        img *= 0.0078125
+        img = np.transpose(img, (2, 0, 1))
+        tensors.append(torch.from_numpy(img))
+    tensors = torch.stack(tensors, 0)
+    tensors = tensors.to(device)
+    return Variable(tensors)
 
 class LPRDataLoader(Dataset):
     def __init__(self, img_dir, imgSize, lpr_max_len, augment=False):
@@ -43,6 +70,8 @@ class LPRDataLoader(Dataset):
     def __getitem__(self, index):
         filename = self.img_paths[index]
         Image = cv2.imread(filename)
+        if Image is None:
+            print(filename)
         height, width, _ = Image.shape
 
         # if np.random.randint(10) == 2:
