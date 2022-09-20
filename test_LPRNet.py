@@ -66,7 +66,9 @@ def collate_fn(batch):
 def test():
     args = get_parser()
 
-    stnlprnet = build_stnlprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate, batch_size=args.test_batch_size)
+    stnlprnet = build_stnlprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS),
+                                dropout_rate=args.dropout_rate, batch_size=args.test_batch_size,
+                                w=args.img_size[0], h=args.img_size[1])
     device = torch.device("cuda:0" if args.cuda else "cpu")
     stnlprnet.to(device)
     print("Successful to build network!")
