@@ -13,7 +13,9 @@ import cv2
 
 class trainSTNLPRNetAdaptiv(trainModel):
     def __init__(self, args, areSquareImages=False):
-        super(trainSTNLPRNetAdaptiv, self).__init__(args, areSquareImages)
+        imgSize = (48, 48) if areSquareImages else (94, 24)
+
+        super(trainSTNLPRNetAdaptiv, self).__init__(args, areSquareImages, imgSize)
         
         if self.areSquareImages:
             self.stnet = STNetSquare(batch_size=args.train_batch_size, w=48, h=48)

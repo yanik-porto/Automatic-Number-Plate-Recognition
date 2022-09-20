@@ -12,7 +12,7 @@ from torch.utils.data import *
 from torch.utils.tensorboard import SummaryWriter
 
 class trainModel(DecoderGreedy):
-    def __init__(self, args, areSquareImages=False):
+    def __init__(self, args, areSquareImages=False, imgSize=(94, 24)):
         super(trainModel, self).__init__(args)
 
         if not os.path.exists(args.save_folder):
@@ -22,7 +22,7 @@ class trainModel(DecoderGreedy):
         self.device = torch.device("cuda:0" if args.cuda else "cpu")
 
         self.areSquareImages = areSquareImages
-        self.args.img_size = (48, 48) if self.areSquareImages else self.args.img_size #Check if useful to provide img_size in args
+        self.args.img_size = imgSize
 
         train_img_dirs = os.path.expanduser(args.train_img_dirs)
         test_img_dirs = os.path.expanduser(args.test_img_dirs)

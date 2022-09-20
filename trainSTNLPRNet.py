@@ -10,7 +10,7 @@ import torch
 
 class trainSTNLPRNet(trainModel):
     def __init__(self, args, areSquareImages=False):
-        super(trainSTNLPRNet, self).__init__(args, areSquareImages)
+        super(trainSTNLPRNet, self).__init__(args, areSquareImages, (94, 24))
 
         self.stnlprnet = build_stnlprnet(lpr_max_len=args.lpr_max_len, phase=args.phase_train, class_num=len(CHARS), dropout_rate=args.dropout_rate, batch_size=args.train_batch_size)
         self.stnlprnet.to(self.device)
