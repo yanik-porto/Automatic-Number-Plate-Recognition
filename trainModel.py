@@ -134,7 +134,9 @@ class trainModel(DecoderGreedy):
 
             # forward
             logits = images
-            for model in self.models():
+            for i, model in enumerate(self.models()):
+                if i > 0:
+                    logits = self.prepBetweenModels(logits)
                 logits = model(logits)
             log_probs = logits.permute(2, 0, 1) # for ctc loss: T x N x C
             log_probs = log_probs.log_softmax(2).requires_grad_()
@@ -165,3 +167,6 @@ class trainModel(DecoderGreedy):
     @abstractmethod
     def saveFinalParameter(self):
         pass
+
+    def prepBetweenModels(self, inputs):
+        return inputs
