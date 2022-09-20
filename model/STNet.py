@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 
 class STNet(nn.Module):
-    def __init__(self):
+    def __init__(self, batch_size=1, w=94, h=24):
         super(STNet, self).__init__()
 
         self.localization = nn.Sequential(
@@ -27,10 +27,10 @@ class STNet(nn.Module):
         self.fc_loc[2].weight.data.zero_()
         self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
         
-        self._batch_size = 1
+        self._batch_size = batch_size
         self._in_ch =3
-        self._w = 94
-        self._h = 24
+        self._w = w
+        self._h = h
         self.base_grid = self.create_base_grid(self._batch_size, self._in_ch, self._h, self._w)
 
     def linspace_from_neg_one(self,num_steps,dtype=torch.float32,align_corners=True):

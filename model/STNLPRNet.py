@@ -31,7 +31,7 @@ class small_basic_block(nn.Module):
         return self.block(x)
 
 class STNLPRNet(nn.Module):
-    def __init__(self, lpr_max_len, phase, class_num, dropout_rate, batch_size=1):
+    def __init__(self, lpr_max_len, phase, class_num, dropout_rate, batch_size=1, w=94, h=24):
         super(STNLPRNet, self).__init__()
         torch.cuda.empty_cache()
 
@@ -91,8 +91,8 @@ class STNLPRNet(nn.Module):
 
         self._batch_size = batch_size
         self._in_ch =3
-        self._w = 94
-        self._h = 24
+        self._w = w
+        self._h = h
         self.base_grid = self.create_base_grid(self._batch_size, self._in_ch, self._h, self._w)
 
     def linspace_from_neg_one(self,num_steps,dtype=torch.float32,align_corners=False):
@@ -159,9 +159,9 @@ class STNLPRNet(nn.Module):
     #     x = F.grid_sample(x, grid, align_corners=True)
     #     return x
 
-def build_stnlprnet(lpr_max_len=11, phase=False, class_num=36, dropout_rate=0.5, batch_size=1):
+def build_stnlprnet(lpr_max_len=11, phase=False, class_num=36, dropout_rate=0.5, batch_size=1, w=94, h=24):
 
-    Net = STNLPRNet(lpr_max_len, phase, class_num, dropout_rate, batch_size)
+    Net = STNLPRNet(lpr_max_len, phase, class_num, dropout_rate, batch_size, w, h)
 
     if phase == "train":
         return Net.train()
