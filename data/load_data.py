@@ -55,14 +55,14 @@ def transformSquared(img):
     return img
 
 class LPRDataset(Dataset):
-    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False):
+    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, suffix='__plaque.jpg'):
         self.img_dir = img_dir
         self.img_paths = []
         self.augment = augment
         for i in range(len(img_dir)):
             for root, dirs, files in os.walk(img_dir[i]):
                 for f in files:
-                    if f.endswith('__plaque.jpg'):
+                    if f.endswith(suffix):
                         self.img_paths.append(os.path.join(root, f))
             # self.img_paths += [el for el in paths.list_images(img_dir[i])]
 
