@@ -62,7 +62,7 @@ class LPRDataset(Dataset):
         for i in range(len(img_dir)):
             for root, dirs, files in os.walk(img_dir[i]):
                 for f in files:
-                    if f.endswith(suffix):
+                    if f.endswith(suffix.split(',')):
                         self.img_paths.append(os.path.join(root, f))
             # self.img_paths += [el for el in paths.list_images(img_dir[i])]
 
