@@ -109,7 +109,7 @@ class trainModel(DecoderGreedy):
 
             if iteration !=0 and iteration % args.save_interval == 0:
                 for model in self.models():
-                    torch.save(model.state_dict(), args.save_folder + model.__class__.__name__ + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
+                    torch.save(model.state_dict(), os.path.join(args.save_folder, model.__class__.__name__ + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth'))
 
             if (iteration + 1) % args.test_interval == 0:
                 for model in self.models():
