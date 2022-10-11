@@ -1,3 +1,6 @@
+import sys
+sys.path.append("Automatic_Number_Plate_Recognition")
+
 from decoderGreedy import DecoderGreedy
 from data.load_data import CHARS, LPRDataset
 import numpy as np

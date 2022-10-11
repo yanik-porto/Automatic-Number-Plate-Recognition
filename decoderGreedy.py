@@ -1,3 +1,6 @@
+import sys
+sys.path.append("Automatic_Number_Plate_Recognition")
+
 from torch.utils.data import DataLoader
 import time
 import numpy as np
