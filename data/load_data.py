@@ -66,7 +66,7 @@ class LPRDataset(Dataset):
                         self.img_paths.append(os.path.join(root, f))
             # self.img_paths += [el for el in paths.list_images(img_dir[i])]
 
-        print("1dir found, size: ",len(self.img_paths))
+        print(len(img_dir), " dir found, size: ",len(self.img_paths))
         random.shuffle(self.img_paths)
         self.img_size = imgSize
         self.lpr_max_len = lpr_max_len
