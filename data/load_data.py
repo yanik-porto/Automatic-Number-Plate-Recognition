@@ -60,7 +60,8 @@ class LPRDataset(Dataset):
         self.img_paths = []
         self.augment = augment
         for i in range(len(img_dir)):
-            for root, dirs, files in os.walk(img_dir[i]):
+            print("Peak files in ", img_dir[i])
+            for root, _, files in os.walk(img_dir[i]):
                 for f in files:
                     if f.endswith(tuple(suffix.split(','))):
                         self.img_paths.append(os.path.join(root, f))

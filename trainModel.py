@@ -8,6 +8,7 @@ import os
 import time
 import torch
 import torch.nn as nn
+import re
 from abc import abstractmethod
 from data.load_data import CHARS
 from torch.autograd import Variable
@@ -179,5 +180,16 @@ class trainModel(DecoderGreedy):
     def joinRelativePathsList(self, dbPath, listPaths):
         absPaths = []
         for path in listPaths:
-            absPaths.append(os.path.join(dbPath, path))
+            targetDirPath = os.path.join(dbPath, path)
+            if '*' in path:
+                targetDirPath = targetDirPath.replace('*', '.*')
+                regex = re.compile(targetDirPath)
+                for root, dirs, _ in os.walk(dbPath):
+                    for d in dirs:
+                        dirPath = os.path.join(root, d)
+                        if regex.match(dirPath):
+                            absPaths.append(dirPath)
+            else:
+                if os.path.isdir(targetDirPath):
+                    absPaths.append(targetDirPath)
         return absPaths
