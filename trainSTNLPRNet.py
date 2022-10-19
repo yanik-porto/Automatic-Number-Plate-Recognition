@@ -7,6 +7,7 @@ from data.load_data import CHARS
 from torch.utils.data import *
 from torch import optim
 import torch
+import os
 
 class trainSTNLPRNet(trainModel):
     def __init__(self, args, areSquareImages=False):
@@ -33,7 +34,7 @@ class trainSTNLPRNet(trainModel):
 
     def saveFinalParameter(self):
         # save final parameters
-        save_path = self.args.save_folder + 'Final_STNLPRNet_model.pth'
+        save_path = os.path.join(self.args.save_folder, 'Final_STNLPRNet_model.pth')
         torch.save(self.stnlprnet.state_dict(), save_path)
         lprnet_eval = build_stnlprnet(lpr_max_len=self.args.lpr_max_len, phase=self.args.phase_train, class_num=len(CHARS), dropout_rate=self.args.dropout_rate, batch_size=self.args.test_batch_size)
         lprnet_eval.to(self.device)

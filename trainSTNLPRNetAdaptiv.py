@@ -10,6 +10,7 @@ from torch.utils.data import *
 from torch import optim
 import torch
 import cv2
+import os
 
 class trainSTNLPRNetAdaptiv(trainModel):
     def __init__(self, args, areSquareImages=False):
@@ -42,7 +43,7 @@ class trainSTNLPRNetAdaptiv(trainModel):
         self.optimizer = optim.Adam(optimizer_params, lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08, weight_decay=args.weight_decay)
 
     def saveFinalParameter(self):
-        save_path_stnet = self.args.save_folder + 'Final_' + self.stnet.__class__.__name__ + '_model.pth'
+        save_path_stnet = os.path.join(self.args.save_folder, + 'Final_' + self.stnet.__class__.__name__ + '_model.pth')
         torch.save(self.stnet.state_dict(), save_path_stnet)
         if self.areSquareImages:
             stnet_eval = STNetSquare(self.args.test_batch_size, self.args.img_size[0], self.args.img_size[1])
@@ -51,7 +52,7 @@ class trainSTNLPRNetAdaptiv(trainModel):
         stnet_eval.to(self.device)
         stnet_eval.load_state_dict(torch.load(save_path_stnet))
 
-        save_path = self.args.save_folder + 'Final_' + self.lprnet.__class__.__name__ + '_model.pth'
+        save_path = os.path.join(self.args.save_folder, 'Final_' + self.lprnet.__class__.__name__ + '_model.pth')
         torch.save(self.lprnet.state_dict(), save_path)
         lprnet_eval = build_lprnet(lpr_max_len=self.args.lpr_max_len, phase=self.args.phase_train, class_num=len(CHARS), dropout_rate=self.args.dropout_rate)
         lprnet_eval.to(self.device)
