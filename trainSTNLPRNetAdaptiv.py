@@ -43,7 +43,7 @@ class trainSTNLPRNetAdaptiv(trainModel):
         self.optimizer = optim.Adam(optimizer_params, lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08, weight_decay=args.weight_decay)
 
     def saveFinalParameter(self):
-        save_path_stnet = os.path.join(self.args.save_folder, + 'Final_' + self.stnet.__class__.__name__ + '_model.pth')
+        save_path_stnet = os.path.join(self.args.save_folder, 'Final_' + self.stnet.__class__.__name__ + '_model.pth')
         torch.save(self.stnet.state_dict(), save_path_stnet)
         if self.areSquareImages:
             stnet_eval = STNetSquare(self.args.test_batch_size, self.args.img_size[0], self.args.img_size[1])
