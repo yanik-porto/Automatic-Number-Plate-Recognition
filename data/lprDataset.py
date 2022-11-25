@@ -8,12 +8,12 @@ import sys
 from torch.autograd import Variable
 sys.path.append("Automatic_Number_Plate_Recognition")
 from misc.separator import *
-from load_data import lpidToLabel, transformSquared 
+from data.load_data import lpidToLabel, transformSquared 
 
 
 
 class LPRDataset(Dataset):
-    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, suffix='__plaque.jpg'):
+    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, suffix='__augmented.jpg'):
         self.img_dir = img_dir
         self.img_paths = []
         self.imgWithAnnots = []
@@ -100,7 +100,7 @@ class LPRDataset(Dataset):
             A.RandomBrightnessContrast(),
         ], p=0.3),
         A.HueSaturationValue(p=0.3),
-        A.Affine(rotate=0.5, shear=0.5, p=0.3)
+        A.Affine(rotate=(-5,5), shear=(-5, 5), translate_percent=(-0.1, 0.1), p=0.5, keep_ratio=True)
         ])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         augmented_image = transform(image=image)['image']
