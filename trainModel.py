@@ -2,7 +2,7 @@ import sys
 sys.path.append("Automatic_Number_Plate_Recognition")
 
 from decoderGreedy import DecoderGreedy
-from data.load_data import CHARS, LPRDataset
+from data.plateDataset import PlateDataset
 import numpy as np
 import os
 import time
@@ -32,8 +32,8 @@ class trainModel(DecoderGreedy):
         dbPath = os.path.expanduser(args.db_path)
         train_img_dirs = self.joinRelativePathsList(dbPath, args.train_img_dirs.split(','))
         test_img_dirs = self.joinRelativePathsList(dbPath, args.test_img_dirs.split(','))
-        self.train_dataset = LPRDataset(train_img_dirs, args.img_size, args.lpr_max_len, True, args.suffix)
-        self.test_dataset = LPRDataset(test_img_dirs, args.img_size, args.lpr_max_len, False, args.suffix)
+        self.train_dataset = PlateDataset(train_img_dirs, args.img_size, args.lpr_max_len, True, args.suffix)
+        self.test_dataset = PlateDataset(test_img_dirs, args.img_size, args.lpr_max_len, False, args.suffix)
 
         self.epoch_size = len(self.train_dataset) // args.train_batch_size
         if self.epoch_size == 0 : self.epoch_size = 1
