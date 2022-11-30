@@ -100,7 +100,7 @@ class LPRDataset(Dataset):
             A.RandomBrightnessContrast(),
         ], p=0.3),
         A.HueSaturationValue(p=0.3),
-        A.Affine(rotate=(-5,5), shear=(-5, 5), translate_percent=(-0.1, 0.1), p=0.5, keep_ratio=True)
+        A.Affine(scale=(1, 1.4), rotate=(-5,5), shear=(-5, 5), translate_percent=(-0.1, 0.1), p=0.5, keep_ratio=True)
         ])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         augmented_image = transform(image=image)['image']
