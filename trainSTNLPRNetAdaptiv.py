@@ -35,6 +35,9 @@ class trainSTNLPRNetAdaptiv(trainModel):
             self.defaultLprInit(self.lprnet)
             print("initial net weights successful!")
 
+        if args.pretrained_model_stn:
+            self.stnet.load_state_dict(torch.load(args.pretrained_model_stn))
+
         # define optimizer
         optimizer_params = [
             {'params': self.stnet.parameters(), 'weight_decay': args.weight_decay},
