@@ -32,8 +32,8 @@ class trainModel(DecoderGreedy):
         dbPath = os.path.expanduser(args.db_path)
         train_img_dirs = self.joinRelativePathsList(dbPath, args.train_img_dirs.split(','))
         test_img_dirs = self.joinRelativePathsList(dbPath, args.test_img_dirs.split(','))
-        self.train_dataset = LPRDataset(train_img_dirs, args.img_size, args.lpr_max_len, True, args.suffix)
-        self.test_dataset = LPRDataset(test_img_dirs, args.img_size, args.lpr_max_len, False, args.suffix)
+        self.train_dataset = LPRDataset(train_img_dirs, args.img_size, args.lpr_max_len, True, args.suffix_train)
+        self.test_dataset = LPRDataset(test_img_dirs, args.img_size, args.lpr_max_len, False, args.suffix_eval)
 
         self.epoch_size = len(self.train_dataset) // args.train_batch_size
         if self.epoch_size == 0 : self.epoch_size = 1
