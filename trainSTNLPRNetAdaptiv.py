@@ -55,7 +55,10 @@ class trainSTNLPRNetAdaptiv(trainModel):
         stnet_eval.to(self.device)
         stnet_eval.load_state_dict(torch.load(save_path_stnet))
 
-        save_path = os.path.join(self.args.save_folder, 'Final_' + self.lprnet.__class__.__name__ + '_model.pth')
+        lprnetName = self.lprnet.__class__.__name__
+        if self.areSquareImages:
+            lprnetName += 'Square'
+        save_path = os.path.join(self.args.save_folder, 'Final_' + lprnetName + '_model.pth')
         torch.save(self.lprnet.state_dict(), save_path)
         lprnet_eval = build_lprnet(lpr_max_len=self.args.lpr_max_len, phase=self.args.phase_train, class_num=len(CHARS), dropout_rate=self.args.dropout_rate)
         lprnet_eval.to(self.device)
