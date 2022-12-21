@@ -52,7 +52,7 @@ class DecoderGreedy(ABC):
                 label = labels[start:start+length]
                 targets.append(label)
                 start += length
-            targets = np.array([el.numpy() for el in targets])
+            targets = np.array([el.numpy() for el in targets], dtype=object)
 
             if args.cuda:
                 images = Variable(images.cuda())
