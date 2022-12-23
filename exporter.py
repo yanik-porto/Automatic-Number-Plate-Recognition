@@ -1,12 +1,14 @@
-import json
 import os
 import torch
-import sys
 from model.STNLPRNet import build_stnlprnet
+from model.LPRNet import build_lprnet
 from data.load_data import CHARS
+import argparse
 
-def help():
-    print("exporter.py <model_path> <exported_model_type>")
+def Parser():
+    parser = argparse.ArgumentParser(description='export lprnet model')
+    parser.add_argument('--model_path', type=str, required=True, help='path to the model to be exported')
+    return parser.parse_args()
 
 
 def torch2onnx(modelPathNoExt, model, device):
@@ -19,22 +21,18 @@ def torch2onnx(modelPathNoExt, model, device):
 
 
 if __name__ == "__main__":
-    print("exporter")
-    if (len(sys.argv) < 3):
-        help()
-        sys.exit()
-    modelPath = sys.argv[1]
-    modelDst = sys.argv[2]
+
+    args = Parser()
+    modelPath = args.model_path
 
     modelPathNoExt, _ = os.path.splitext(modelPath)
 
-    model = build_stnlprnet(lpr_max_len=8, phase=False,
-                          class_num=len(CHARS), dropout_rate=0, batch_size=1)
+    # model = build_stnlprnet(lpr_max_len=8, phase=False, class_num=len(CHARS), dropout_rate=0, batch_size=1)
+    model = build_lprnet(lpr_max_len=8, phase=False, class_num=len(CHARS), dropout_rate=0)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model.to(device).eval()
     model.load_state_dict(torch.load(modelPath))
 
     print(model)
 
-    if modelDst == "onnx":
-        onnx_path = torch2onnx(modelPathNoExt, model, device)
+    onnx_path = torch2onnx(modelPathNoExt, model, device)
