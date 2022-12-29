@@ -24,6 +24,8 @@ def lpidToLabel(lpid):
     label = list()
     for c in lpid:
         c = c.upper()
+        if not c in CHARS_DICT:
+            print(lpid)
         label.append(CHARS_DICT[c])
     return label
 
@@ -58,3 +60,6 @@ def transformSquared(img):
     # quartWidth = img.shape[1] // 4
     # img = cv2.hconcat([img[:halfHeight,quartWidth:-quartWidth], img[halfHeight:halfHeight*2,:]])
     return img
+
+def isSquareImg(img):
+    return img.shape[0] * 2 > img.shape[1] 
