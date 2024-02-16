@@ -69,8 +69,8 @@ class STNetSquare(nn.Module):
 
         return x
 
-    @torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)  # TODO 在 pytorch 1.6.1 中移除: https://github.com/pytorch/pytorch/issues/42218
-    def f32fwd(self, x, theta):
-        grid = F.affine_grid(theta, x.size(), align_corners=True)
-        x = F.grid_sample(x, grid, align_corners=True)
-        return x
+    # @torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)  # TODO 在 pytorch 1.6.1 中移除: https://github.com/pytorch/pytorch/issues/42218
+    # def f32fwd(self, x, theta):
+    #     grid = F.affine_grid(theta, x.size(), align_corners=True)
+    #     x = F.grid_sample(x, grid, align_corners=True)
+    #     return x
