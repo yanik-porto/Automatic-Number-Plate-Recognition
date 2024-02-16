@@ -1,6 +1,5 @@
 from torch.utils.data import Dataset
 import cv2
-import albumentations as A
 # import pandas as pd
 import numpy as np
 import random
