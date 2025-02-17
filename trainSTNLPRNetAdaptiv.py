@@ -13,7 +13,7 @@ import cv2
 import os
 
 class trainSTNLPRNetAdaptiv(trainModel):
-    def __init__(self, args, areSquareImages=False):
+    def __init__(self, args, areSquareImages=False, no_stn=False):
         imgSize = (48, 48) if areSquareImages else (94, 24)
 
         super(trainSTNLPRNetAdaptiv, self).__init__(args, areSquareImages, imgSize)
@@ -45,6 +45,8 @@ class trainSTNLPRNetAdaptiv(trainModel):
         ]
         self.optimizer = optim.Adam(optimizer_params, lr=args.learning_rate, betas = [0.9, 0.999], eps=1e-08, weight_decay=args.weight_decay)
 
+        self.no_stn = no_stn
+
     def saveFinalParameter(self):
         save_path_stnet = os.path.join(self.args.save_folder, 'Final_' + self.stnet.__class__.__name__ + '_model.pth')
         torch.save(self.stnet.state_dict(), save_path_stnet)
@@ -69,7 +71,10 @@ class trainSTNLPRNetAdaptiv(trainModel):
         self.Greedy_Decode_Eval([stnet_eval, lprnet_eval], self.test_dataset)
 
     def models(self):
-        return [self.stnet, self.lprnet]
+        if self.no_stn:
+            return self.lprnet
+        else:
+            return [self.stnet, self.lprnet]
 
     def prepBetweenModels(self, inputs):
         if self.areSquareImages:
