@@ -72,7 +72,7 @@ class trainSTNLPRNetAdaptiv(trainModel):
 
     def models(self):
         if self.no_stn:
-            return self.lprnet
+            return [self.lprnet]
         else:
             return [self.stnet, self.lprnet]
 
