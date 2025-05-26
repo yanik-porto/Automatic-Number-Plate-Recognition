@@ -8,6 +8,7 @@ from torch.autograd import Variable
 from data.load_data import CHARS
 import torch
 from abc import ABC, abstractmethod
+from eval.definitions import SEPARATOR
 
 class DecoderGreedy(ABC):
     def __init__(self, args):
@@ -28,6 +29,7 @@ class DecoderGreedy(ABC):
 
         return (torch.stack(imgs, 0), torch.from_numpy(labels), lengths, filenames)
         
+    @torch.no_grad()
     def Greedy_Decode_Eval(self, Nets, datasets):
         args = self.args
 
@@ -64,7 +66,7 @@ class DecoderGreedy(ABC):
             for i, Net in enumerate(Nets):
                 if i > 0:
                     prebs = self.prepBetweenModels(prebs)
-                prebs = Net(prebs)
+                prebs = Net(prebs)  
 
             # greedy decode
             prebs = prebs.cpu().detach().numpy()
@@ -128,7 +130,7 @@ class DecoderGreedy(ABC):
         def prepBetweenModels(self, inputs):
             return inputs
 
-def ctcBestPath(mat, classes):
+def ctcBestPath(mat, classes, append_separator=False):
     "implements best path decoding as shown by Graves (Dissertation, p63)"
 
     # dim0=t, dim1=c
@@ -137,16 +139,38 @@ def ctcBestPath(mat, classes):
     blankIdx = len(classes)
     lastMaxIdx = maxC  # init with invalid label
 
+    maxblanks = 0
+    nblanks = 0
+    separator_pose = -1
+
     for t in range(maxT):
         maxIdx = np.argmax(mat[t, :])
         if maxIdx != lastMaxIdx and maxIdx != blankIdx:
             label += classes[maxIdx]
 
+        # find separator position
+        if append_separator:
+            # when a charachter is found, reset separator count
+            if maxIdx != lastMaxIdx and maxIdx != blankIdx:
+                if nblanks > maxblanks:
+                    maxblanks = nblanks
+                    separator_pose = len(label) - 1
+                nblanks = 0
+            # when a blank is found, start separator count
+            elif maxIdx == blankIdx and maxIdx != lastMaxIdx:
+                nblanks = 1
+            # when a blank is repeated, increment separator count
+            elif maxIdx == blankIdx and maxIdx == lastMaxIdx:
+                nblanks += 1
+
         lastMaxIdx = maxIdx
+
+    if append_separator and separator_pose != -1 and separator_pose != 0: # remove position 0 for now, TODO : check for taxis
+        label = label[:separator_pose] + SEPARATOR + label[separator_pose:]
 
     return label
 
-def probsToLabel(probs):
+def probsToLabel(probs, append_separator=False):
     mat = probs.squeeze().transpose()
     classes = CHARS[:-1]
-    return ctcBestPath(mat, classes)
+    return ctcBestPath(mat, classes, append_separator)
