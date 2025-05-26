@@ -14,8 +14,9 @@ import argparse
 
 def Parser():
     parser = argparse.ArgumentParser(description='export stn model')
-    parser.add_argument('--model_path', type=str, required=True, help='path to the model to be exported')
+    parser.add_argument('model_path', type=str, help='path to the model to be exported')
     parser.add_argument('--square', default=False, action='store_true', help='Set if stn model as square shape as input')
+    parser.add_argument('--no_trt_plugin', default=False, action='store_true', help='Set if you don\'t want to use trt plugin')
     return parser.parse_args()
 
 def grid_sampler(g, input, grid, mode, padding_mode, aligncorners): #long, long, long: contants dtype
@@ -87,5 +88,6 @@ if __name__ == "__main__":
     isSquare = True if args.square else False
     onnx_path = torch2onnx(modelPathNoExt, model, device, isSquare)
     print("exported")
-    modify_onnx(onnx_path)
+    if not args.no_trt_plugin:
+        modify_onnx(onnx_path)
     print("modified")
