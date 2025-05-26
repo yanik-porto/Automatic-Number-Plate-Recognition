@@ -6,11 +6,16 @@ from data.load_data import CHARS
 import onnx
 import onnx_graphsurgeon as gs
 import numpy as np
+import argparse
 import torch.onnx.symbolic_opset11 as sym_opset
 import torch.onnx.symbolic_helper as sym_help
 
-def help():
-    print("exporter.py <model_path> <exported_model_type>")
+def parse_args():
+    parser = argparse.ArgumentParser(description="convert stnlprnet model with specific GridSampler operator")
+    parser.add_argument("model_path", type=str, help="path to the model to convert")
+    parser.add_argument("--width", type=int, required=False, default=94, help="width of the input")
+    parser.add_argument("--height", type=int, required=False, default=24, help="height of the input")
+    return parser.parse_args()
 
 def grid_sampler(g, input, grid, mode, padding_mode, aligncorners): #long, long, long: contants dtype
     mode_i = sym_help._maybe_get_scalar(mode)
@@ -22,10 +27,8 @@ def grid_sampler(g, input, grid, mode, padding_mode, aligncorners): #long, long,
 
 sym_opset.grid_sampler = grid_sampler
 
-def torch2onnx(modelPathNoExt, model, device):
+def torch2onnx(modelPathNoExt, model, device, W=94, H=24):
     N = 1
-    H = 24
-    W = 94
     C = 3
     input_size = (N, C, H, W)
     inputs = torch.randn(input_size).to(device)
@@ -61,26 +64,20 @@ def modify_onnx(onnx_model_file):
     onnx.save(gs.export_onnx(graph), onnx_model_file)
 
 if __name__ == "__main__":
-    print("exporter")
-    if (len(sys.argv) < 3):
-        help()
-        sys.exit()
-    modelPath = sys.argv[1]
-    modelDst = sys.argv[2]
+    args = parse_args()
 
-    modelPathNoExt, _ = os.path.splitext(modelPath)
+    modelPathNoExt, _ = os.path.splitext(args.model_path)
 
     model = build_stnlprnet(lpr_max_len=8, phase=False,
-                          class_num=len(CHARS), dropout_rate=0, batch_size=1)
+                          class_num=len(CHARS), dropout_rate=0, batch_size=1, w=args.width, h=args.height)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     # model.float()  # load to FP32
     model.to(device).eval()
-    model.load_state_dict(torch.load(modelPath))
+    model.load_state_dict(torch.load(args.model_path))
 
     print(model)
 
-    if modelDst == "onnx":
-        onnx_path = torch2onnx(modelPathNoExt, model, device)
-        print("exported")
-        modify_onnx(onnx_path)
-        print("modified")
+    onnx_path = torch2onnx(modelPathNoExt, model, device, args.width, args.height)
+    print("exported")
+    modify_onnx(onnx_path)
+    print("modified")
