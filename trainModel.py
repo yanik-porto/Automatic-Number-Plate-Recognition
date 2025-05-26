@@ -5,6 +5,7 @@ from decoderGreedy import DecoderGreedy
 from data.lprDataset import LPRDataset
 import numpy as np
 import os
+import os.path as op
 import time
 import torch
 import torch.nn as nn
@@ -14,6 +15,7 @@ from data.load_data import CHARS
 from torch.autograd import Variable
 from torch.utils.data import *
 from torch.utils.tensorboard import SummaryWriter
+from tools import create_symlink
 
 class trainModel(DecoderGreedy):
     def __init__(self, args, areSquareImages=False, imgSize=(94, 24)):
@@ -101,6 +103,7 @@ class trainModel(DecoderGreedy):
         epoch = 0 + args.resume_epoch
         loss_val = 0
         GLOBAL_LOSS = np.inf
+        max_acc = -np.inf
 
         writer = SummaryWriter()
 
@@ -112,14 +115,27 @@ class trainModel(DecoderGreedy):
                 epoch += 1
 
             if iteration !=0 and iteration % args.save_interval == 0:
-                for model in self.models():
-                    torch.save(model.state_dict(), os.path.join(args.save_folder, model.__class__.__name__ + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth'))
+                # for model in self.models():
 
-            if (iteration + 1) % args.test_interval == 0:
-                for model in self.models():
-                    model.eval()
+            # if (iteration + 1) % args.test_interval == 0:
                 Acc = self.Greedy_Decode_Eval(self.models(), self.test_dataset)
                 writer.add_scalar("Accuracy/eval", Acc, epoch)
+
+                isBest = False
+                if Acc > max_acc:
+                    max_acc = Acc
+                    isBest = True
+
+                for model in self.models():
+                    model.eval()
+                    chkpt_path = os.path.join(args.save_folder, model.__class__.__name__ + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
+                    torch.save(model.state_dict(), chkpt_path)
+                    if isBest:
+                        className = model.__class__.__name__
+                        if self.areSquareImages and className =='LPRNet':
+                            className += 'Square'
+                        create_symlink(chkpt_path, className + '_best.pth')
+                    
 
             start_time = time.time()
             # load train data
