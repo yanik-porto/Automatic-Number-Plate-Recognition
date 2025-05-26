@@ -7,7 +7,7 @@ import argparse
 
 def Parser():
     parser = argparse.ArgumentParser(description='export lprnet model')
-    parser.add_argument('--model_path', type=str, required=True, help='path to the model to be exported')
+    parser.add_argument('model_path', type=str, help='path to the model to be exported')
     return parser.parse_args()
 
 

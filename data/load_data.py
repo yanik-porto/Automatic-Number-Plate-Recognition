@@ -25,6 +25,7 @@ def lpidToLabel(lpid):
         c = c.upper()
         if not c in CHARS_DICT:
             print(lpid)
+            continue
         label.append(CHARS_DICT[c])
     return label
 
