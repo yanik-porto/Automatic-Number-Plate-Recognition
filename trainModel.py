@@ -128,12 +128,13 @@ class trainModel(DecoderGreedy):
 
                 for model in self.models():
                     model.eval()
-                    chkpt_path = os.path.join(args.save_folder, model.__class__.__name__ + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
+                    className = model.__class__.__name__
+                    if self.areSquareImages and className =='LPRNet':
+                        className += 'Square'
+                    chkpt_path = os.path.join(args.save_folder, className + '__epoch_' + repr(epoch) + '_iteration_' + repr(iteration) + '.pth')
                     torch.save(model.state_dict(), chkpt_path)
                     if isBest:
-                        className = model.__class__.__name__
-                        if self.areSquareImages and className =='LPRNet':
-                            className += 'Square'
+                        print(f"Best model saved [iter {iteration}, epoch {epoch}]")
                         create_symlink(chkpt_path, className + '_best.pth')
                     
 
@@ -172,7 +173,7 @@ class trainModel(DecoderGreedy):
             self.optimizer.step()
             loss_val += loss.item()
             end_time = time.time()
-            if iteration % 20 == 0:
+            if iteration % 1000 == 0:
                 print('Epoch:' + repr(epoch) + ' || epochiter: ' + repr(iteration % self.epoch_size) + '/' + repr(self.epoch_size)
                     + '|| Total iter ' + repr(iteration) + ' || Loss: %.4f||' % (loss.item()) +
                     'Batch time: %.4f sec. ||' % (end_time - start_time) + 'LR: %.8f' % (lr))
