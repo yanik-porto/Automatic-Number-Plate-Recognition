@@ -9,6 +9,7 @@ import torch
 from torch.autograd import Variable
 sys.path.append("Automatic_Number_Plate_Recognition")
 from misc.separator import *
+from eval.definitions import SEPARATOR
 
 CHARS = [
          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -25,6 +26,7 @@ def lpidToLabel(lpid):
         c = c.upper()
         if not c in CHARS_DICT:
             print(lpid)
+        if c == SEPARATOR:
             continue
         label.append(CHARS_DICT[c])
     return label
