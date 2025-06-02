@@ -18,8 +18,9 @@ class trainSTNLPRNetAdaptiv(trainModel):
 
         super(trainSTNLPRNetAdaptiv, self).__init__(args, areSquareImages, imgSize)
         
+        self.prepBtwModelOnGpu = True
         if self.areSquareImages:
-            self.stnet = STNetSquare(batch_size=args.train_batch_size, w=48, h=48)
+            self.stnet = STNetSquare(batch_size=args.train_batch_size, w=48, h=48, find_cut_point=self.prepBtwModelOnGpu)
         else:
             self.stnet = STNet(batch_size=args.train_batch_size, w=94, h=24)
         self.stnet.to(self.device)
@@ -51,7 +52,7 @@ class trainSTNLPRNetAdaptiv(trainModel):
         save_path_stnet = os.path.join(self.args.save_folder, 'Final_' + self.stnet.__class__.__name__ + '_model.pth')
         torch.save(self.stnet.state_dict(), save_path_stnet)
         if self.areSquareImages:
-            stnet_eval = STNetSquare(self.args.test_batch_size, self.args.img_size[0], self.args.img_size[1])
+            stnet_eval = STNetSquare(self.args.test_batch_size, self.args.img_size[0], self.args.img_size[1], find_cut_point=True)
         else:
             stnet_eval = STNet(self.args.test_batch_size, self.args.img_size[0], self.args.img_size[1])
         stnet_eval.to(self.device)
@@ -77,7 +78,11 @@ class trainSTNLPRNetAdaptiv(trainModel):
             return [self.stnet, self.lprnet]
 
     def prepBetweenModels(self, inputs):
+
         if self.areSquareImages:
+            if self.prepBtwModelOnGpu:
+                return inputs
+                
             imagesTrans = []
             images = tensorToImages(inputs)
             for img in images:

@@ -6,8 +6,10 @@ import torch.nn.functional as F
 
 
 class STNetSquare(nn.Module):
-    def __init__(self, batch_size=1, w=48, h=48):
+    def __init__(self, batch_size=1, w=48, h=48, find_cut_point=False):
         super(STNetSquare, self).__init__()
+
+        self.find_cut_point = find_cut_point
 
         self.localization = nn.Sequential(
                 nn.Conv2d(3, 32, kernel_size=3),
@@ -46,6 +48,42 @@ class STNetSquare(nn.Module):
         base_grid.select(-1,2).fill_(1)
         return base_grid
 
+    def transform_image_with_cutpoint(self, x, cut_point):
+        batch_size = x.size(0)
+        transformed_images = []
+
+        for i in range(batch_size):
+            img = x[i]
+            # cut_perc = cut_point[i].item()
+            cut_perc = 0.5
+
+            height = img.size(1)
+            width = img.size(2)
+            half = height // 2
+
+            cut = int(cut_perc * height)
+
+            top_part = img[:, :cut, :]
+            bottom_part = img[:, cut:, :]
+
+            if cut_perc < 0.5:
+                top_part = F.pad(top_part, (0, 0, 0, half - cut), mode='constant', value=0)
+                bottom_part = F.interpolate(bottom_part.unsqueeze(0), size=(half, width), mode='bilinear', align_corners=False)
+                bottom_part = bottom_part.squeeze(0)
+            elif cut_perc > 0.5:
+                bottom_part = F.pad(bottom_part, (0, 0, 0, cut - half), mode='constant', value=0)
+                top_part = F.interpolate(top_part.unsqueeze(0), size=(half, width), mode='bilinear', align_corners=False)
+                top_part = top_part.squeeze(0)
+            # if 0.5, keep it like it is
+
+
+            # Concatenate the two parts horizontally with fitting to 94 (instead 96)
+            transformed_img = torch.cat((top_part[:, :, 1:], bottom_part[:, :, :-1]), dim=2)
+            transformed_images.append(transformed_img)
+
+        transformed_images = torch.stack(transformed_images)
+        return transformed_images
+    
     def forward(self, x):
         xs = self.localization(x)
         xs = xs.view(-1, 32 * 6 * 6)
@@ -67,6 +105,8 @@ class STNetSquare(nn.Module):
 
         # x = self.f32fwd(x, theta)
 
+        if self.find_cut_point:
+            x = self.transform_image_with_cutpoint(x, 0.5) 
         return x
 
     # @torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)  # TODO 在 pytorch 1.6.1 中移除: https://github.com/pytorch/pytorch/issues/42218
