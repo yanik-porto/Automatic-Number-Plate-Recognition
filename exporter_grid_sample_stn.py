@@ -17,6 +17,7 @@ def Parser():
     parser.add_argument('model_path', type=str, help='path to the model to be exported')
     parser.add_argument('--square', default=False, action='store_true', help='Set if stn model as square shape as input')
     parser.add_argument('--no_trt_plugin', default=False, action='store_true', help='Set if you don\'t want to use trt plugin')
+    parser.add_argument('--cut_in_cpu', default=False, action='store_true', help='Set if you don\'t want to use the cut in gpu')
     return parser.parse_args()
 
 def grid_sampler(g, input, grid, mode, padding_mode, aligncorners): #long, long, long: contants dtype
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     modelPath = args.model_path
     modelPathNoExt, _ = os.path.splitext(modelPath)
 
-    model = STNetSquare() if args.square else STNet()
+    model = STNetSquare(find_cut_point=not args.cut_in_cpu) if args.square else STNet()
     # model = STNetSquare()
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     # model.float()  # load to FP32
@@ -90,4 +91,4 @@ if __name__ == "__main__":
     print("exported")
     if not args.no_trt_plugin:
         modify_onnx(onnx_path)
-    print("modified")
+        print("modified")
