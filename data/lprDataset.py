@@ -13,11 +13,12 @@ from data.load_data import lpidToLabel, transformSquared
 
 
 class LPRDataset(Dataset):
-    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, suffix='__augmented.jpg'):
+    def __init__(self, img_dir, imgSize, lpr_max_len, augment=False, suffix='__augmented.jpg', do_augment_coarse=True):
         self.img_dir = img_dir
         self.img_paths = []
         self.imgWithAnnots = []
         self.augment = augment
+        self.do_augment_coarse = do_augment_coarse
         for i in range(len(img_dir)):
             print("Peak files in ", img_dir[i])
             for root, _, files in os.walk(img_dir[i]):
@@ -40,11 +41,10 @@ class LPRDataset(Dataset):
         Image = cv2.imread(filename)
         if Image is None:
             print(filename)
-        height, width, _ = Image.shape
+        
 
         if self.doTransformSquare:
             Image = transformSquared(Image)
-        Image = cv2.resize(Image, self.img_size)
             
         # if width/height<2:
         #     Image = bifurcate(Image)
@@ -74,8 +74,14 @@ class LPRDataset(Dataset):
         return label
 
     def transform(self, img):
+        img = cv2.resize(img, self.img_size)
         if self.augment:
-            img = self.augment_image(img)
+            height, width, _ = img.shape
+            if height / width < 0.3 and self.do_augment_coarse:
+                img = self.augment_image_coarse(img)
+            else:
+                img = self.augment_image(img)
+
         img = img.astype('float32')
         #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img -= 127.5
@@ -83,27 +89,63 @@ class LPRDataset(Dataset):
         #thresh, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
         #img = np.reshape(img, img.shape + (1,))
         img = np.transpose(img, (2, 0, 1))
+
         return img
 
+
+
+
+
     def augment_image(self, image):
-        transform = A.Compose([
-        A.GaussNoise(),
-        A.OneOf([
-            A.MotionBlur(p=.4),
-            A.MedianBlur(blur_limit=3, p=0.3),
-            A.Blur(blur_limit=3, p=0.3),
-        ], p=0.4),
-        A.OneOf([
-            A.CLAHE(clip_limit=2),
-            A.Sharpen(),
-            A.Emboss(),
-            A.RandomBrightnessContrast(),
-        ], p=0.3),
-        A.HueSaturationValue(p=0.3),
-        A.Affine(scale=(1, 1.4), rotate=(-5,5), shear=(-5, 5), translate_percent=(-0.1, 0.1), p=0.5, keep_ratio=True),
-        A.ToGray(p=0.5, num_output_channels=3)
-        ])
+        base_transform = A.Compose([
+            A.GaussNoise(),
+            A.OneOf([
+                A.MotionBlur(p=.4),
+                A.MedianBlur(blur_limit=3, p=0.3),
+                A.Blur(blur_limit=3, p=0.3),
+            ], p=0.4),
+            A.OneOf([
+                A.CLAHE(clip_limit=2),
+                A.Sharpen(),
+                A.Emboss(),
+                A.RandomBrightnessContrast(),
+            ], p=0.3),
+            A.HueSaturationValue(p=0.3),
+            A.Affine(scale=(1, 1.4), rotate=(-5,5), shear=(-5, 5), translate_percent=(-0.1, 0.1), p=0.5, keep_ratio=True),
+            A.ToGray(p=0.5, num_output_channels=3)
+            # A.Resize(height=self.img_size[1], width=self.img_size[0])
+            ])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        augmented_image = transform(image=image)['image']
+        augmented_image = base_transform(image=image)['image']
+        augmented_image = cv2.cvtColor(augmented_image, cv2.COLOR_RGB2BGR)
+        return augmented_image
+    
+    def augment_image_coarse(self, image):
+        coarse_transform = A.Compose([
+                A.GaussNoise(),
+                A.OneOf([
+                    A.MotionBlur(p=.4),
+                    A.MedianBlur(blur_limit=3, p=0.3),
+                    A.Blur(blur_limit=3, p=0.3),
+                ], p=0.4),
+                A.OneOf([
+                    A.CLAHE(clip_limit=2),
+                    A.Sharpen(),
+                    A.Emboss(),
+                    A.RandomBrightnessContrast(),
+                ], p=0.3),
+                A.HueSaturationValue(p=0.3),
+                A.OneOf([
+                    A.Compose([
+                        A.Affine(scale=(1, 1.4), rotate=(-30,30), shear=(-5, 5), translate_percent=(-0.1, 0.1), p=0.5, keep_ratio=True, fit_output=True), # more rotation
+                        A.Resize(height=self.img_size[1], width=self.img_size[0])
+                    ]),
+                    A.Perspective(scale=(0.05, 0.1), keep_size=True, fit_output=True, p=0.5)
+                ], p=1),
+                A.ToGray(p=0.5, num_output_channels=3)
+                # A.Resize(height=self.img_size[1], width=self.img_size[0])
+                ])
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        augmented_image = coarse_transform(image=image)['image']
         augmented_image = cv2.cvtColor(augmented_image, cv2.COLOR_RGB2BGR)
         return augmented_image
